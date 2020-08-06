@@ -35,11 +35,15 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import java.lang.Math; //para el log
+import java.util.Scanner; //input
+
 /**
  *
  * @author Allison
  */
 public class main {
+    public static int cantDocu;
     
     public static List sacarTXT(String path){ //saca las lineas del txt y las guarda en una lista
     File archivo = null;
@@ -135,13 +139,14 @@ public class main {
             
         }
         System.out.println("Cantidad de páginas procesadas: "+ contador);
+        cantDocu = contador;
         
         return paginas;
     }
     
     public static String removerStopWords(String texto){
         try{
-            String archivo = "C:\\Users\\Allison\\Desktop\\TP3\\stopwords.txt";
+            String archivo = "C:\\Users\\gabyg\\Documents\\GitHub\\TP3_RIT\\stopwords.txt"; // C:\\Users\\Allison\\Desktop\\TP3\\stopwords.txt
             List<String> stopwords = Files.readAllLines(Paths.get(archivo));
             String[] nuevo = texto.toLowerCase().split(" ");
             StringBuilder builder = new StringBuilder();
@@ -160,6 +165,7 @@ public class main {
             return null;
         }
     }
+    
     
     public static Document makeParser(String pagina){ //crea un objeto de tipo document para poder parsear el sgml
         
@@ -242,7 +248,7 @@ public class main {
         }
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\";
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; // C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -297,7 +303,7 @@ public class main {
         }
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\";
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; //C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -312,7 +318,7 @@ public class main {
         return docs;
     }
     
-    public static void crearDicc(List docs, String prefijo) throws IOException{ //crea el txt dicc
+    public static Map<String, Integer> crearDicc(List docs, String prefijo) throws IOException{ //crea el txt dicc
         String body="", acumTexto = "";
         Map<String, Integer> diccionario = new HashMap<String, Integer>(); //diccionario de clases
         int cantidad;
@@ -376,7 +382,7 @@ public class main {
         
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\";
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; // C:\\Users\\Allison\\Desktop\\TP3\\ 
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -388,19 +394,71 @@ public class main {
         BufferedWriter bw = new BufferedWriter(fw);
         bw.write(cadena);
         bw.close();
+        return diccionario;
     }
-
+    
+    public static Map<String, Integer> descartarTerminos(Map<String, Integer> dicci, int min){
+        Map<String, Integer> nuevo = new HashMap<String, Integer>();
+        Iterator it = dicci.entrySet().iterator();
+        while (it.hasNext()) { //recorre el diccionario de clases
+            Map.Entry e = (Map.Entry)it.next(); 
+            int value = (int) e.getValue(); //cantidad de articulos
+            String key = (String) e.getKey(); //clase
+            if(value >= min){ //si esta mas veces que el minNi
+                nuevo.put(key, value); //agrega al nuevo diccionario
+            }
+        }
+        return nuevo;
+    }
+    
+    public static double calcularEntropiaColeccion(Map<String, Integer> clases){
+        Map<String, Integer> nuevo = clases; //para no dañar el original por si acaso
+        double suma = 0;
+        double resultado;
+        double log = 0;
+        for (Map.Entry<String, Integer> entry : nuevo.entrySet()) {
+            String key = entry.getKey();
+            Integer value = entry.getValue();
+            resultado = value / cantDocu;
+            log = Math.log10(resultado) / Math.log10(2);
+            resultado = resultado * log;
+            suma += resultado;
+        }
+        suma = suma * -1;
+        return suma;
+        
+    }
+    
+    public static void calcularEntropiaTermino(){
+        
+    }
+    
+    public static void calcularGananciaInformacion(Map<String, Integer> clases, Map<String, Integer> dicci){
+        double entropiaC = calcularEntropiaColeccion(clases);
+    }
    
     public static void main(String[] args) throws IOException {
-        String path = "C:\\Users\\Allison\\Downloads\\Tarea_programada_3 (1)\\reut2-001.sgm"; //ubicación de la colección
-        String prefijo = "pr1";
+        Scanner myObj = new Scanner(System.in);
+        System.out.println("Ingrese la ruta:");
+        String path;// = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\reut2-001.sgm"; //ubicación de la colección C:\\Users\\Allison\\Downloads\\Tarea_programada_3 (1)\\reut2-001.sgm
+        path = myObj.nextLine(); 
+        System.out.println("Ingrese el prefijo:");
+        String prefijo; // = "pr1";
+        prefijo = myObj.nextLine();
+        System.out.println("Ingrese la cantidad de mejores términos:");
+        int numMejores = Integer.parseInt(myObj.nextLine()); 
+        System.out.println("Ingrese la cantidad mínima de documentos por clase:");
+        int minNc = Integer.parseInt(myObj.nextLine()); //8
+        System.out.println("Ingrese la cantidad mínima de documentos por término:");
+        int minNi = Integer.parseInt(myObj.nextLine()); //3
+        
+        
         List lineas = new ArrayList(); 
         List articulos = new ArrayList(); 
         List lineasLimpias = new ArrayList(); 
         List docs = new ArrayList(); //guarda los articulos seleccionados en la clase docs
         Map<String, Integer> clases = new HashMap<String, Integer>(); //diccionario de clases
-        int minNc = 8; 
-        int minNi = 3;
+        Map<String, Integer> diccionario;
         
         
         
@@ -417,7 +475,10 @@ public class main {
        //crear docs.txt
        docs = crearDocs(clases, articulos, minNc, prefijo);
        //crear dicc.txt
-       crearDicc(docs, prefijo);
+       diccionario = crearDicc(docs, prefijo);
+       //descartar terminos con minNi
+       diccionario = descartarTerminos(diccionario, minNi);
+       calcularGananciaInformacion(clases, diccionario);
     }
     
 }
