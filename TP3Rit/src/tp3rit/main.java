@@ -38,7 +38,14 @@ import java.util.Map;
 import java.lang.Math; //para el log
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.Scanner; //input
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -48,6 +55,7 @@ public class main {
     public static int cantDocu;
     public static List articulos = new ArrayList(); 
     public static Map<String, String> clasesText;
+    public static int totalArticulos = 0;
     
     
     public static List sacarTXT(String path){ //saca las lineas del txt y las guarda en una lista
@@ -139,7 +147,9 @@ public class main {
             if (bandera == 1){
                 pagina = pagina+linea+"\n";
             }else{
-                paginas.add(pagina);
+                if (pagina.length()>0){
+                    paginas.add(pagina);
+                }
                 pagina = "";
             }
             
@@ -172,9 +182,32 @@ public class main {
         }
     }
     
+    public static String arreglarString(String body){
+        //REGEX
+        Pattern patron = Pattern.compile("^[a-zA-Z]+$");
+        Pattern patron2 = Pattern.compile("^\\d+(\\.\\d+)*$");
+        String salida="";
+        
+        body = body.replaceAll(",", "");
+        String[] nuevo = body.split(" ");
+        
+        for (String palabra:nuevo){
+            Matcher a = patron.matcher(palabra);
+            Matcher b = patron2.matcher(palabra);
+            boolean bool = a.matches();
+            boolean bool2 = b.matches();
+            if (bool || bool2){
+                if(!palabra.equals("is")){
+                    salida = salida + palabra +" ";
+                }
+            }
+        }
+        return salida;
+    }
+    
     
     public static Document makeParser(String pagina){ //crea un objeto de tipo document para poder parsear el sgml
-        
+       
         try {
             DocumentBuilderFactory dbf =
             DocumentBuilderFactory.newInstance();
@@ -204,10 +237,11 @@ public class main {
     return "?";
   }
     
-    public static Map clases(Map clases, List articulos){ //crea un diccionario con las clases y la cantidad de articulos que son de esa clase
+    public static Map clases(Map<String, Integer> clases, List articulos, int minNi){ //crea un diccionario con las clases y la cantidad de articulos que son de esa clase
         List topics = new ArrayList(); //guardar las clases que hay
         String topic;
         int cantidad;
+        Map<String, Integer> clasesNuevo = new HashMap<String, Integer>();
         
         
         for (Object articulo:articulos){ //para cada pagina el mismo proceso
@@ -228,18 +262,28 @@ public class main {
         for (Object tema:topics){ //recorre lista de temas obtenidos
             if(clases.containsKey(tema)){ //pregunta si ya está en el diccionario
                 cantidad = (int)clases.get(tema); 
-                clases.put(tema, cantidad+1); //aumenta la cantidad de articulos con ese tema
+                clases.put((String) tema, cantidad+1); //aumenta la cantidad de articulos con ese tema
             }else{
-                clases.put(tema, 1); //si no está, loo inicializa en uno
+                clases.put((String) tema, 1); //si no está, loo inicializa en uno
             }
         }
-       
-        return clases;
+        
+        for (Entry<String, Integer> entry : clases.entrySet()){
+            int cantidadPaginas = entry.getValue();
+            String key = entry.getKey();
+            if (cantidadPaginas>=minNi){
+                
+                clasesNuevo.put(key, cantidadPaginas);
+            }
+        }
+        
+        System.out.println(clasesNuevo);
+        return clasesNuevo;
     }
     
     public static void crearClases(int minNc, Map clases, String prefijo) throws IOException{ //crea el txt con las clases  
         prefijo = prefijo+"_clases.txt";
-        String cadena=""; //para agregar las clases y cant de articulos
+        String cadena="====Clases Seleccionadas====\n\n"; //para agregar las clases y cant de articulos
         
         Iterator it = clases.entrySet().iterator();
         while (it.hasNext()) { //recorre el diccionario de clases
@@ -247,9 +291,8 @@ public class main {
             int value = (int) e.getValue(); //cantidad de articulos
             String key = (String) e.getKey(); //clase
             
-            if(value>=minNc){ //si la cantidad de articulos es igual o mayor que el minimo indicado por el usuario
-                cadena = cadena + key + "\t" + value + "\n"; //lo agrega a la cadena
-            }
+            
+             cadena = cadena + key + "\t" + value + "\n"; //lo agrega a la cadena
             
         }
         
@@ -273,7 +316,7 @@ public class main {
         String topic;
         String NEWID;
         String topYN;
-        String cadena = ""; //para escribir el archivo
+        String cadena = "====Ariticulos Seleccionados====\n\n"; //para escribir el archivo
         int cantidad;
         List docs = new ArrayList();
         prefijo = prefijo+"_docs.txt";
@@ -347,6 +390,7 @@ public class main {
             //quita saltos de linea
             body = body.replaceAll("\n", "");
             body = body.replaceAll("", "");
+            body = arreglarString(body);
             //separa las palabras
             String[] nuevo = body.split(" ");
             
@@ -374,7 +418,7 @@ public class main {
         
         
         //construir el string para escribir en el documento dicc.txt
-        String cadena=""; //para agregar las clases y cant de articulos
+        String cadena="====Diccionario de Términos====\n\n"; //para agregar las clases y cant de articulos
         
         Iterator it = diccionario.entrySet().iterator();
         while (it.hasNext()) { //recorre el diccionario de clases
@@ -421,21 +465,27 @@ public class main {
     //calcula E(C)
     public static double calcularEntropiaColeccion(Map<String, Integer> clases){
         
-        float suma = 0, paginas=0;
-        float resultado;
-        float log = 0;
+        double suma = 0;
+        double resultado;
+        double log = 0;
+        
+        for (Map.Entry<String, Integer> entry : clases.entrySet()){
+            Integer cantidad = entry.getValue();
+            totalArticulos = totalArticulos + cantidad;
+        }
+        
         
         for (Map.Entry<String, Integer> entry : clases.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
-            resultado = (float) value / cantDocu;
-            log = (float) (Math.log10(resultado) / Math.log10(2));
+            resultado = (double) value / totalArticulos;
+            log = (double) (Math.log10(resultado) / Math.log10(2));
             resultado = resultado * log;
             suma = suma + resultado;
-            paginas = paginas+value;
         }
         
         suma = suma * -1;
+        System.out.println("Entropia de la coleccion: "+suma);
         return suma;
         
     }
@@ -498,54 +548,16 @@ public class main {
             }
         }
         
-            
-        /*
-        for (Object articulo : articulos){
-            Document doc = makeParser(articulo.toString());
-            
-            //saca el tema
-            NodeList node1 = doc.getElementsByTagName("TOPICS");
-            Node nNode1 = node1.item(0);
-            String topic = nNode1.getTextContent(); 
-            if (topic.length()>0){ //si hay un tema
-                
-                if (topic.equals(tema)){ //si el tema es igual al que buscamos
-                    //Saca el texto de la etiqueta topic
-                    NodeList nodes = doc.getElementsByTagName("BODY");
-                    Node nNode = nodes.item(0);
-                    if (nNode!=null){ //a veces está vacío y se cae xd por eso el if
-                        body = nNode.getTextContent();  //sacamos el texto de body
-                    }
-            
-                    //quita stopwords
-                    body = removerStopWords(body.toLowerCase());
-                    //quita saltos de linea
-                    body = body.replaceAll("\n", "");
-                    body = body.replaceAll("", "");
-                    String[] palabras = body.split(" ");
-
-                    for (String palabra : palabras){
-                        if (palabra.equals(termino)){
-                            total = total + 1;
-                        }
-                    }
-            
-                    
-                }
-            }
-            
-        }*/
         
         return total;
     }
     
     
     //Calcula el E(C,〖term〗_i )  
-    public static String calcularGananciaInformacion(Map<String, Integer> clases, Map<String, Integer> dicci){
+    public static Map calcularEntropiaTermino(Map<String, Integer> clases, Map<String, Integer> dicci){
         
-        double entropiaC = calcularEntropiaColeccion(clases); //se calcula E(C) la entropía de toda la colección
-        String cadena="";
-        System.out.println("Entropía de las clases: "+ entropiaC);
+        Map<String, Double> ec = new HashMap<String, Double>();
+        
         
         
         //Para ordenar el HashMap
@@ -587,30 +599,40 @@ public class main {
            double parte1, parte2;
            
            parte1 = ni * (Math.log10(ni) / Math.log10(2));
-           parte2 = (cantDocu-ni)*(Math.log10(cantDocu-ni) / Math.log10(2));
+           parte2 = (totalArticulos-ni)*(Math.log10(totalArticulos-ni) / Math.log10(2));
            
            
            total = parte1 + parte2 - sumatoria1 - sumatoria2;
-           total = total / cantDocu;
+           total = total / totalArticulos;
            
-           double GI = entropiaC - total;
            
-           //forma el string que se escribirá en el doc
-           cadena = cadena + termino + "\t" + total + "\t" + GI + "\n";
            
-           //para agregar al diccionario de mejores
-           //Para ordenar el HashMap
-           
+           ec.put(termino.toString(), total);
         }
         
        
-        System.out.println(cadena);
         
-        return cadena;
         
+        return ec;
     }
     
-    public static void crearGI(String cadena, String prefijo) throws IOException{
+    public static Map calcularGananciaInformacion(Map<String, Double> ec, double entropiaC, String prefijo) throws IOException{
+        String cadena = "====Ganancia de Información====\n\nEntropía Total = ";
+        cadena = cadena + entropiaC + "\n\n";
+        Map<String, Double> gananciaInf = new HashMap<String, Double>();
+        
+        for (Map.Entry<String, Double> termino : ec.entrySet()){
+            Double entropiaTermino = termino.getValue();
+            String palabra = termino.getKey();
+            
+            
+            double GI = entropiaC - entropiaTermino;
+            cadena = cadena + palabra + "\t" + entropiaTermino + "\t" + GI + "\n";
+            
+            gananciaInf.put(palabra, GI);
+        }
+        
+        
         prefijo = prefijo + "_gi.txt";
         //=================CREAR EL DOC===================
         String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
@@ -626,15 +648,55 @@ public class main {
         bw.write(cadena);
         bw.close();
         
+        return gananciaInf;
     }
-   
+    
+   public static void crearMejores(Map<String, Double> GI, Map<String, Double> entropia, int numMejores, String prefijo) throws IOException{
+       String cadena="======Mejores Términos según Ganancia de Información======\n\n";
+       //ordena los términos en un nuevo Map en orden decreciente
+       Map<String,Double> mejores = GI.entrySet()
+               .stream()
+               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+               .limit(numMejores)
+               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+       
+       for (Map.Entry<String, Double> entry : mejores.entrySet()){
+           String termino = entry.getKey();
+           double ganancia = entry.getValue();
+           double entropiaTermino = entropia.get(termino);
+           
+           cadena = cadena + termino + "\t" + entropiaTermino + "\t" + ganancia + "\n";
+           
+       }
+       
+        prefijo = prefijo + "_mejores.txt";
+        //=================CREAR EL DOC===================
+        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
+        String rutaFinal = ruta+prefijo;
+        
+        File file = new File(rutaFinal);
+        // Si el archivo no existe es creado
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        FileWriter fw = new FileWriter(file);
+        BufferedWriter bw = new BufferedWriter(fw);
+        bw.write(cadena);
+        bw.close();
+       
+   }
+
     public static void main(String[] args) throws IOException {
         //Variables a usar 
+        
+        double entropiaC;
         List lineas = new ArrayList(); 
         List lineasLimpias = new ArrayList(); 
         List docs = new ArrayList(); //guarda los articulos seleccionados en la clase docs
         Map<String, Integer> clases = new HashMap<String, Integer>(); //diccionario de clases con cant de docs por clase
         Map<String, Integer> diccionario = new HashMap<String, Integer>(); //diccionario de términos 
+        Map<String, Double> entropiaTerminos = new HashMap<String, Double>(); //diccionario de términos 
+        Map<String, Double> GananciaInformacion = new HashMap<String, Double>(); //diccionario de términos 
         
         
         //Pide los parámetros
@@ -662,10 +724,9 @@ public class main {
         lineas = sacarTXT(path); //saca las lineas del sgml en una lista
         lineasLimpias = limpiarArticulos(lineas); //quita caracteres especiales
         articulos = dividirArticulos(lineasLimpias); //devuelve una lista con los articulos separados
-        articulos.remove(0); 
-      
+        
        //construir diccionario con las clases
-       clases = clases(clases, articulos);
+       clases = clases(clases, articulos, minNc);
        
        //crear clases.txt
        crearClases(minNc, clases, prefijo);
@@ -677,10 +738,16 @@ public class main {
        diccionario = descartarTerminos(diccionario, minNi);
        //saca clase y texto
        clasesText = dividirClases(articulos);
-        
-       String GI = calcularGananciaInformacion(clases, diccionario);
+       
+       //Calcula la entropia de toda la colección
+       entropiaC = calcularEntropiaColeccion(clases);
+       //Calcula la entropia de cada término
+       entropiaTerminos = calcularEntropiaTermino(clases, diccionario);
        //Crea gi.txt
-       crearGI(GI, prefijo);
+       GananciaInformacion = calcularGananciaInformacion(entropiaTerminos, entropiaC, prefijo);
+       crearMejores(GananciaInformacion, entropiaTerminos, numMejores, prefijo);
+       
+       
     }
     
 }
