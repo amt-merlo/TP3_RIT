@@ -176,13 +176,13 @@ public class main {
     public static Document makeParser(String pagina){ //crea un objeto de tipo document para poder parsear el sgml
         
         try {
-            DocumentBuilderFactory dbf =
-            DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             InputSource is = new InputSource();
+            is.setEncoding("UTF-8");
             is.setCharacterStream(new StringReader(pagina));
-
             Document doc = db.parse(is);
+            
             return doc;
             
         }
