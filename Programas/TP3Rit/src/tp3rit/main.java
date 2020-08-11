@@ -152,7 +152,7 @@ public class main {
     
     public static String removerStopWords(String texto){
         try{
-            String archivo = "C:\\Users\\Allison\\Desktop\\TP3\\stopwords.txt"; //  C:\\Users\\gabyg\\Documents\\GitHub\\TP3_RIT\\stopwords.txt
+            String archivo = "C:\\Users\\gabyg\\Documents\\GitHub\\TP3_RIT\\stopwords.txt"; //  C:\\Users\\gabyg\\Documents\\GitHub\\TP3_RIT\\stopwords.txt  C:\\Users\\Allison\\Desktop\\TP3\\stopwords.txt
             List<String> stopwords = Files.readAllLines(Paths.get(archivo));
             String[] nuevo = texto.toLowerCase().split(" ");
             StringBuilder builder = new StringBuilder();
@@ -254,7 +254,7 @@ public class main {
         }
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\  C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -309,7 +309,7 @@ public class main {
         }
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; // C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; // C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\ C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -388,7 +388,7 @@ public class main {
         
         
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\  C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
@@ -613,7 +613,7 @@ public class main {
     public static void crearGI(String cadena, String prefijo) throws IOException{
         prefijo = prefijo + "_gi.txt";
         //=================CREAR EL DOC===================
-        String ruta = "C:\\Users\\Allison\\Desktop\\TP3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\
+        String ruta = "C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\"; //  C:\\Users\\gabyg\\Downloads\\Tarea_programada_3\\  C:\\Users\\Allison\\Desktop\\TP3\\
         String rutaFinal = ruta+prefijo;
         
         File file = new File(rutaFinal);
